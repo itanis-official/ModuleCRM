@@ -1,1 +1,38 @@
 .env
+
+# Dependencies
+**/*.dll
+**/*.exe  
+**/*.pdb
+**/*.cache
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Visual Studio / Rider
+**/.vs/
+**/*.suo
+**/*.ncb
+
+# Visual Studio Code
+.vscode/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet
+**/*.nupkg
+
+# JetBrains Rider
+**/.idea/
