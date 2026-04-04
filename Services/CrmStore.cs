@@ -14,21 +14,14 @@ namespace ModuleCRM.Services
         private readonly object _lock = new();
         private int _companyId;
         private int _contactId;
-        private int _projectId;
         private int _opportunityId;
-        private int _userId;
-
         private readonly List<Company> _companies = new();
         private readonly List<Contact> _contacts = new();
-        private readonly List<Project> _projects = new();
         private readonly List<Opportunity> _opportunities = new();
-        private readonly List<User> _users = new();
 
         public IEnumerable<Company> Companies => _companies;
         public IEnumerable<Contact> Contacts => _contacts;
-        public IEnumerable<Project> Projects => _projects;
         public IEnumerable<Opportunity> Opportunities => _opportunities;
-        public IEnumerable<User> Users => _users;
 
         public Company AddCompany(Company company)
         {
@@ -161,66 +154,6 @@ namespace ModuleCRM.Services
             }
         }
 
-        // Projects
-        public Project AddProject(Project project)
-        {
-            lock (_lock)
-            {
-                project.Id = ++_projectId;
-                project.CreatedAt = DateTime.UtcNow;
-                project.UpdatedAt = DateTime.UtcNow;
-                _projects.Add(project);
-                return project;
-            }
-        }
-
-        public Project? GetProject(int id)
-        {
-            lock (_lock)
-            {
-                return _projects.FirstOrDefault(p => p.Id == id);
-            }
-        }
-
-        public void UpdateProject(Project project)
-        {
-            lock (_lock)
-            {
-                var existing = _projects.FirstOrDefault(p => p.Id == project.Id);
-                if (existing == null)
-                    return;
-
-                existing.Name = project.Name;
-                existing.Reference = project.Reference;
-                existing.Description = project.Description;
-                existing.Status = project.Status;
-                existing.StartDate = project.StartDate;
-                existing.EndDate = project.EndDate;
-                existing.CompanyId = project.CompanyId;
-                existing.UpdatedAt = DateTime.UtcNow;
-            }
-        }
-
-        public bool DeleteProject(int id)
-        {
-            lock (_lock)
-            {
-                var existing = _projects.FirstOrDefault(p => p.Id == id);
-                if (existing == null)
-                    return false;
-                _projects.Remove(existing);
-                return true;
-            }
-        }
-
-        public IEnumerable<Project> GetProjectsByCompany(int companyId)
-        {
-            lock (_lock)
-            {
-                return _projects.Where(p => p.CompanyId == companyId).ToList();
-            }
-        }
-
         // Opportunities
         public Opportunity AddOpportunity(Opportunity opportunity)
         {
@@ -291,60 +224,5 @@ namespace ModuleCRM.Services
             }
         }
 
-        // Users
-        public User AddUser(User user)
-        {
-            lock (_lock)
-            {
-                user.Id = ++_userId;
-                user.CreatedAt = DateTime.UtcNow;
-                user.UpdatedAt = DateTime.UtcNow;
-                _users.Add(user);
-                return user;
-            }
-        }
-
-        public User? GetUser(int id)
-        {
-            lock (_lock)
-            {
-                return _users.FirstOrDefault(u => u.Id == id);
-            }
-        }
-
-        public void UpdateUser(User user)
-        {
-            lock (_lock)
-            {
-                var existing = _users.FirstOrDefault(u => u.Id == user.Id);
-                if (existing == null)
-                    return;
-
-                existing.Nom = user.Nom;
-                existing.Prenom = user.Prenom;
-                existing.Email = user.Email;
-                existing.Telephone = user.Telephone;
-                existing.Login = user.Login;
-                existing.PasswordHash = user.PasswordHash;
-                existing.Avatar = user.Avatar;
-                existing.Role = user.Role;
-                existing.IsActive = user.IsActive;
-                existing.LastLogin = user.LastLogin;
-                existing.UpdatedAt = DateTime.UtcNow;
-            }
-        }
-
-        public bool DeleteUser(int id)
-        {
-            lock (_lock)
-            {
-                var existing = _users.FirstOrDefault(u => u.Id == id);
-                if (existing == null)
-                    return false;
-
-                _users.Remove(existing);
-                return true;
-            }
-        }
     }
 }

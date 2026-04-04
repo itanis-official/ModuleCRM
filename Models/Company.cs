@@ -14,7 +14,7 @@ namespace ModuleCRM.Models
         public string? MatriculeFiscal { get; set; }
         public string MatriculeFiscalCountry { get; set; } = "TN";
         public string? Secteur { get; set; }
-        public string? Logo { get; set; } // Base64 or URL
+        public string? Logo { get; set; }
         public string? Devis { get; set; }
 
         // Address
@@ -31,9 +31,8 @@ namespace ModuleCRM.Models
         public string? TelephoneSecondaire { get; set; }
         public string TelephoneSecondaireCountry { get; set; } = "+216";
 
-        // Management
+        // Management (Agent vient de ModuleRH via API)
         public int? AgentResponsableId { get; set; }
-        public User? AgentResponsable { get; set; }
 
         public string Statut { get; set; } = "prospect";
         public string? Notes { get; set; }
@@ -45,8 +44,6 @@ namespace ModuleCRM.Models
         // Navigation
         public virtual ICollection<Contact>? Contacts { get; set; }
         public virtual ICollection<Opportunity>? Opportunities { get; set; }
-        public virtual ICollection<Project>? Projects { get; set; }
         public virtual ICollection<Contract>? Contracts { get; set; }
     }
-
 }

@@ -21,8 +21,7 @@ namespace ModuleCRM.Controllers
         {
             var contracts = await _db.Contracts
                 .Include(ct => ct.Company)
-                .Include(ct => ct.Project)
-                .Include(ct => ct.UploadedByUser)
+
                 .ToListAsync();
             return Ok(contracts);
         }
@@ -32,8 +31,7 @@ namespace ModuleCRM.Controllers
         {
             var contract = await _db.Contracts
                 .Include(ct => ct.Company)
-                .Include(ct => ct.Project)
-                .Include(ct => ct.UploadedByUser)
+
                 .FirstOrDefaultAsync(ct => ct.Id == id);
 
             if (contract == null)
@@ -97,8 +95,7 @@ namespace ModuleCRM.Controllers
         {
             var contracts = await _db.Contracts
                 .Where(ct => ct.CompanyId == companyId)
-                .Include(ct => ct.Project)
-                .Include(ct => ct.UploadedByUser)
+
                 .ToListAsync();
             return Ok(contracts);
         }
@@ -109,7 +106,6 @@ namespace ModuleCRM.Controllers
             var contracts = await _db.Contracts
                 .Where(ct => ct.ProjectId == projectId)
                 .Include(ct => ct.Company)
-                .Include(ct => ct.UploadedByUser)
                 .ToListAsync();
             return Ok(contracts);
         }

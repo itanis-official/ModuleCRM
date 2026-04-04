@@ -11,7 +11,6 @@ namespace ModuleCRM.Models
         public Company? Company { get; set; }
 
         public int? ProjectId { get; set; }
-        public Project? Project { get; set; }
 
         [Required]
         public string Reference { get; set; } = string.Empty;
@@ -25,8 +24,8 @@ namespace ModuleCRM.Models
 
         public string Status { get; set; } = "draft"; // draft, active, replaced, expired
 
+        // Agent vient de ModuleRH via API
         public int? UploadedById { get; set; }
-        public User? UploadedByUser { get; set; }
 
         public DateTime? UploadDate { get; set; }
 

@@ -20,9 +20,8 @@ namespace ModuleCRM.Controllers
         public async Task<ActionResult<IEnumerable<Company>>> GetAll()
         {
             var companies = await _db.Companies
-                .Include(c => c.AgentResponsable)
                 .Include(c => c.Contacts)
-                .Include(c => c.Projects)
+
                 .ToListAsync();
             return Ok(companies);
         }
@@ -31,9 +30,8 @@ namespace ModuleCRM.Controllers
         public async Task<ActionResult<Company>> GetById(int id)
         {
             var company = await _db.Companies
-                .Include(c => c.AgentResponsable)
                 .Include(c => c.Contacts)
-                .Include(c => c.Projects)
+
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (company == null)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ModuleCRM.Models
@@ -11,7 +12,6 @@ namespace ModuleCRM.Models
         public Company? Company { get; set; }
 
         public int? ProjectParentId { get; set; }
-        public Project? ProjectParent { get; set; }
 
         [Required]
         public string Titre { get; set; } = string.Empty;
@@ -28,15 +28,17 @@ namespace ModuleCRM.Models
         public string Type { get; set; } = "nouveau";
         public string? SubType { get; set; }
 
+        // Agents viennent de ModuleRH via API
         public int? AgentCommercialId { get; set; }
-        public User? AgentCommercial { get; set; }
-
         public int? AgentCdcId { get; set; }
-        public User? AgentCdc { get; set; }
         public DateTime? EcheanceCdc { get; set; }
         public string? CdcFilePath { get; set; }
 
+        public string? RaisonPerte { get; set; }
         public string? Notes { get; set; }
+
+        // Phases
+        public virtual ICollection<Phase>? Phases { get; set; }
 
         // Timestamps
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

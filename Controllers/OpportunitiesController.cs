@@ -21,8 +21,7 @@ namespace ModuleCRM.Controllers
         {
             var opportunities = await _db.Opportunities
                 .Include(o => o.Company)
-                .Include(o => o.ProjectParent)
-                .Include(o => o.AgentCommercial)
+
                 .ToListAsync();
             return Ok(opportunities);
         }
@@ -32,8 +31,8 @@ namespace ModuleCRM.Controllers
         {
             var opportunity = await _db.Opportunities
                 .Include(o => o.Company)
-                .Include(o => o.ProjectParent)
-                .Include(o => o.AgentCommercial)
+
+                .Include(o => o.Phases)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (opportunity == null)
@@ -74,6 +73,7 @@ namespace ModuleCRM.Controllers
             existing.AgentCdcId = updatedOpportunity.AgentCdcId;
             existing.EcheanceCdc = updatedOpportunity.EcheanceCdc;
             existing.CdcFilePath = updatedOpportunity.CdcFilePath;
+            existing.RaisonPerte = updatedOpportunity.RaisonPerte;
             existing.Notes = updatedOpportunity.Notes;
             existing.CompanyId = updatedOpportunity.CompanyId;
             existing.ProjectParentId = updatedOpportunity.ProjectParentId;
@@ -95,6 +95,24 @@ namespace ModuleCRM.Controllers
             await _db.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpPut("{id}/change-stage")]
+        public async Task<ActionResult> ChangeStage(int id, [FromQuery] string stage, [FromQuery] string? raisonPerte = null)
+        {
+            var existing = await _db.Opportunities.FindAsync(id);
+            if (existing == null)
+                return NotFound();
+
+            existing.PipelineStage = stage;
+            if (stage == "perdue" && !string.IsNullOrEmpty(raisonPerte))
+                existing.RaisonPerte = raisonPerte;
+            if (stage == "gagnee" || stage == "perdue")
+                existing.DateCloture = DateTime.UtcNow;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            return Ok(existing);
         }
 
         [HttpGet("ByCompany/{companyId}")]

@@ -101,8 +101,6 @@ namespace ModuleCRM.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AgentResponsableId");
-
                     b.ToTable("Companies");
                 });
 
@@ -218,19 +216,12 @@ namespace ModuleCRM.Migrations
                     b.Property<int?>("UploadedById")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UploadedByUserId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Version")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("UploadedByUserId");
 
                     b.ToTable("Contracts");
                 });
@@ -283,6 +274,9 @@ namespace ModuleCRM.Migrations
                     b.Property<int?>("ProjectParentId")
                         .HasColumnType("int");
 
+                    b.Property<string>("RaisonPerte")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SubType")
                         .HasColumnType("nvarchar(max)");
 
@@ -303,18 +297,12 @@ namespace ModuleCRM.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AgentCdcId");
-
-                    b.HasIndex("AgentCommercialId");
-
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("ProjectParentId");
 
                     b.ToTable("Opportunities");
                 });
 
-            modelBuilder.Entity("ModuleCRM.Models.Project", b =>
+            modelBuilder.Entity("ModuleCRM.Models.Phase", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -322,105 +310,74 @@ namespace ModuleCRM.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CompanyId")
+                    b.Property<int?>("AgentEtudeId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("EndDate")
+                    b.Property<DateTime?>("DateEnvoi")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
+                    b.Property<DateTime?>("DateSignature")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateValidite")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DocumentPath")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FeedbackClient")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("MeetingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MeetingTime")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Montant")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OpportunityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("int");
 
                     b.Property<string>("Reference")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("Signed")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId");
-
-                    b.ToTable("Projects");
-                });
-
-            modelBuilder.Entity("ModuleCRM.Models.User", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Avatar")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
+                    b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsActive")
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Validated")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("LastLogin")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Login")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Nom")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Prenom")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Telephone")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
-                });
+                    b.HasIndex("OpportunityId");
 
-            modelBuilder.Entity("ModuleCRM.Models.Company", b =>
-                {
-                    b.HasOne("ModuleCRM.Models.User", "AgentResponsable")
-                        .WithMany("CompaniesManaged")
-                        .HasForeignKey("AgentResponsableId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("AgentResponsable");
+                    b.ToTable("Phases");
                 });
 
             modelBuilder.Entity("ModuleCRM.Models.Contact", b =>
@@ -442,62 +399,29 @@ namespace ModuleCRM.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ModuleCRM.Models.Project", "Project")
-                        .WithMany("Contracts")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("ModuleCRM.Models.User", "UploadedByUser")
-                        .WithMany()
-                        .HasForeignKey("UploadedByUserId");
-
                     b.Navigation("Company");
-
-                    b.Navigation("Project");
-
-                    b.Navigation("UploadedByUser");
                 });
 
             modelBuilder.Entity("ModuleCRM.Models.Opportunity", b =>
                 {
-                    b.HasOne("ModuleCRM.Models.User", "AgentCdc")
-                        .WithMany()
-                        .HasForeignKey("AgentCdcId");
-
-                    b.HasOne("ModuleCRM.Models.User", "AgentCommercial")
-                        .WithMany("OpportunitiesManaged")
-                        .HasForeignKey("AgentCommercialId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("ModuleCRM.Models.Company", "Company")
                         .WithMany("Opportunities")
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ModuleCRM.Models.Project", "ProjectParent")
-                        .WithMany("Opportunities")
-                        .HasForeignKey("ProjectParentId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("AgentCdc");
-
-                    b.Navigation("AgentCommercial");
-
                     b.Navigation("Company");
-
-                    b.Navigation("ProjectParent");
                 });
 
-            modelBuilder.Entity("ModuleCRM.Models.Project", b =>
+            modelBuilder.Entity("ModuleCRM.Models.Phase", b =>
                 {
-                    b.HasOne("ModuleCRM.Models.Company", "Company")
-                        .WithMany("Projects")
-                        .HasForeignKey("CompanyId")
+                    b.HasOne("ModuleCRM.Models.Opportunity", "Opportunity")
+                        .WithMany("Phases")
+                        .HasForeignKey("OpportunityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Company");
+                    b.Navigation("Opportunity");
                 });
 
             modelBuilder.Entity("ModuleCRM.Models.Company", b =>
@@ -507,22 +431,11 @@ namespace ModuleCRM.Migrations
                     b.Navigation("Contracts");
 
                     b.Navigation("Opportunities");
-
-                    b.Navigation("Projects");
                 });
 
-            modelBuilder.Entity("ModuleCRM.Models.Project", b =>
+            modelBuilder.Entity("ModuleCRM.Models.Opportunity", b =>
                 {
-                    b.Navigation("Contracts");
-
-                    b.Navigation("Opportunities");
-                });
-
-            modelBuilder.Entity("ModuleCRM.Models.User", b =>
-                {
-                    b.Navigation("CompaniesManaged");
-
-                    b.Navigation("OpportunitiesManaged");
+                    b.Navigation("Phases");
                 });
 #pragma warning restore 612, 618
         }
