@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ModuleCRM.Data;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 // Load .env file
 var envPath = Path.Combine(AppContext.BaseDirectory, ".env");
@@ -21,12 +23,28 @@ if (File.Exists(envPath))
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
+
 // HttpClient pour consommer l'API ModuleRH (Agents)
 builder.Services.AddHttpClient<ModuleCRM.Services.AgentApiService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ModuleRH:BaseUrl"] ?? "http://localhost:5085");
+});
+
+builder.Services.AddHttpClient<ModuleCRM.Services.EquipeApiService>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ModuleRH:BaseUrl"] ?? "http://localhost:5085");
 });
@@ -39,6 +57,13 @@ builder.Services.AddDbContext<CrmDbContext>(options =>
 
 var app = builder.Build();
 
+// Keep database schema aligned with EF Core model on startup.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CrmDbContext>();
+    db.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -46,7 +71,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
 app.UseHttpsRedirection();
+
+// Serve uploaded files (contracts PDFs)
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "Uploads");
+Directory.CreateDirectory(uploadsPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
 app.UseAuthorization();
 
 app.MapControllers();

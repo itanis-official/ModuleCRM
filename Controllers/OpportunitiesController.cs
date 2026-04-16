@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ModuleCRM.Data;
+using ModuleCRM.DTOs;
 using ModuleCRM.Models;
+using Microsoft.Extensions.Logging;
 
 namespace ModuleCRM.Controllers
 {
@@ -10,29 +12,57 @@ namespace ModuleCRM.Controllers
     public class OpportunitiesController : ControllerBase
     {
         private readonly CrmDbContext _db;
+        private readonly ILogger<OpportunitiesController> _logger;
 
-        public OpportunitiesController(CrmDbContext db)
+        public OpportunitiesController(CrmDbContext db, ILogger<OpportunitiesController> logger)
         {
             _db = db;
+            _logger = logger;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Opportunity>>> GetAll()
+        public async Task<ActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize, [FromQuery] string? search)
         {
-            var opportunities = await _db.Opportunities
-                .Include(o => o.Company)
+            try
+            {
+                var query = _db.Opportunities.AsNoTracking().AsQueryable();
 
-                .ToListAsync();
-            return Ok(opportunities);
+                if (!string.IsNullOrWhiteSpace(search))
+                    query = query.Where(o => o.Titre.Contains(search));
+
+                if (page.HasValue && pageSize.HasValue)
+                {
+                    var totalCount = await query.CountAsync();
+                    var items = await query
+                        .OrderByDescending(o => o.CreatedAt)
+                        .Skip((page.Value - 1) * pageSize.Value)
+                        .Take(pageSize.Value)
+                        .ToListAsync();
+
+                    return Ok(new PagedResult<Opportunity>
+                    {
+                        Items = items,
+                        TotalCount = totalCount,
+                        Page = page.Value,
+                        PageSize = pageSize.Value
+                    });
+                }
+
+                var opportunities = await query.OrderByDescending(o => o.CreatedAt).ToListAsync();
+                return Ok(opportunities);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting opportunities");
+                return StatusCode(500, new { message = "Une erreur est survenue lors de la récupération des opportunités." });
+            }
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Opportunity>> GetById(int id)
         {
             var opportunity = await _db.Opportunities
-                .Include(o => o.Company)
-
-                .Include(o => o.Phases)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (opportunity == null)
@@ -48,6 +78,21 @@ namespace ModuleCRM.Controllers
             opportunity.UpdatedAt = DateTime.UtcNow;
 
             _db.Opportunities.Add(opportunity);
+            await _db.SaveChangesAsync();
+
+            // Auto-initialiser les 4 phases pour la nouvelle opportunité
+            var phaseTypes = new[] { "meeting", "study", "offer", "contract" };
+            foreach (var type in phaseTypes)
+            {
+                _db.Phases.Add(new Phase
+                {
+                    OpportunityId = opportunity.Id,
+                    Type = type,
+                    Status = "pending",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
             await _db.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = opportunity.Id }, opportunity);
@@ -69,6 +114,7 @@ namespace ModuleCRM.Controllers
             existing.DateCloture = updatedOpportunity.DateCloture;
             existing.Type = updatedOpportunity.Type;
             existing.SubType = updatedOpportunity.SubType;
+            existing.TypeProjet = updatedOpportunity.TypeProjet;
             existing.AgentCommercialId = updatedOpportunity.AgentCommercialId;
             existing.AgentCdcId = updatedOpportunity.AgentCdcId;
             existing.EcheanceCdc = updatedOpportunity.EcheanceCdc;
