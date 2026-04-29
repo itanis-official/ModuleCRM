@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ModuleCRM.Models
 {
@@ -9,16 +10,21 @@ namespace ModuleCRM.Models
         public int Id { get; set; }
 
         public int CompanyId { get; set; }
+        [JsonIgnore]
         public Company? Company { get; set; }
 
         public int? ProjectParentId { get; set; }
 
         [Required]
+        [StringLength(200)]
         public string Titre { get; set; } = string.Empty;
 
+        [StringLength(2000)]
         public string? Description { get; set; }
 
+        [Range(0, double.MaxValue, ErrorMessage = "La valeur estimée doit être positive.")]
         public decimal? ValeurEstimee { get; set; }
+        [Range(0, 100, ErrorMessage = "La probabilité doit être entre 0 et 100.")]
         public int Probabilite { get; set; } = 50;
 
         public string PipelineStage { get; set; } = "prospection";
@@ -27,6 +33,7 @@ namespace ModuleCRM.Models
 
         public string Type { get; set; } = "nouveau";
         public string? SubType { get; set; }
+        public string? TypeProjet { get; set; }
 
         // Agents viennent de ModuleRH via API
         public int? AgentCommercialId { get; set; }
@@ -38,6 +45,7 @@ namespace ModuleCRM.Models
         public string? Notes { get; set; }
 
         // Phases
+        [JsonIgnore]
         public virtual ICollection<Phase>? Phases { get; set; }
 
         // Timestamps

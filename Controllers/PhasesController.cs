@@ -19,18 +19,14 @@ namespace ModuleCRM.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Phase>>> GetAll()
         {
-            var phases = await _db.Phases
-                .Include(p => p.Opportunity)
-                .ToListAsync();
+            var phases = await _db.Phases.AsNoTracking().ToListAsync();
             return Ok(phases);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Phase>> GetById(int id)
         {
-            var phase = await _db.Phases
-                .Include(p => p.Opportunity)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var phase = await _db.Phases.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
 
             if (phase == null)
                 return NotFound();
@@ -38,7 +34,7 @@ namespace ModuleCRM.Controllers
             return Ok(phase);
         }
 
-        [HttpGet("ByOpportunity/{opportunityId}")]
+        [HttpGet("by-opportunity/{opportunityId}")]
         public async Task<ActionResult<IEnumerable<Phase>>> GetByOpportunity(int opportunityId)
         {
             var phases = await _db.Phases
