@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModuleCRM.DTOs;
 using ModuleCRM.Services;
 
 namespace ModuleCRM.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class AgentsController : ControllerBase

@@ -1,45 +1,68 @@
-using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
+using ModuleCRM.Data;
 using ModuleCRM.DTOs;
 
 namespace ModuleCRM.Services
 {
+    /// <summary>
+    /// Source de verite : table locale AgentsLocal (read-replica RH via RabbitMQ).
+    /// Auth migree vers Authentik : plus de Request/Reply MassTransit auth/profile/changePassword.
+    /// </summary>
     public class AgentApiService
     {
-        private readonly HttpClient _httpClient;
+        private readonly CrmDbContext _db;
 
-        public AgentApiService(HttpClient httpClient)
+        public AgentApiService(CrmDbContext db)
         {
-            _httpClient = httpClient;
+            _db = db;
         }
 
         public async Task<List<AgentDto>> GetAllAsync()
         {
-            var agents = await _httpClient.GetFromJsonAsync<List<AgentDto>>("api/agents");
-            return agents ?? new List<AgentDto>();
+            return await _db.AgentsLocal
+                .AsNoTracking()
+                .OrderBy(a => a.Nom).ThenBy(a => a.Prenom)
+                .Select(a => Map(a))
+                .ToListAsync();
         }
 
         public async Task<AgentDto?> GetByIdAsync(int id)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<AgentDto>($"api/agents/{id}");
-            }
-            catch (HttpRequestException)
-            {
-                return null;
-            }
+            var a = await _db.AgentsLocal.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            return a == null ? null : Map(a);
         }
 
         public async Task<List<AgentDto>> GetByRoleAsync(string role)
         {
-            var agents = await _httpClient.GetFromJsonAsync<List<AgentDto>>($"api/agents/by-role/{role}");
-            return agents ?? new List<AgentDto>();
+            return await _db.AgentsLocal
+                .AsNoTracking()
+                .Where(a => a.Role == role)
+                .Select(a => Map(a))
+                .ToListAsync();
         }
 
         public async Task<List<AgentDto>> GetByDepartementAsync(string departement)
         {
-            var agents = await _httpClient.GetFromJsonAsync<List<AgentDto>>($"api/agents/by-departement/{departement}");
-            return agents ?? new List<AgentDto>();
+            return await _db.AgentsLocal
+                .AsNoTracking()
+                .Where(a => a.Departement == departement)
+                .Select(a => Map(a))
+                .ToListAsync();
         }
+
+        private static AgentDto Map(Models.AgentLocal a) => new AgentDto
+        {
+            Id = a.Id,
+            Nom = a.Nom,
+            Prenom = a.Prenom,
+            Email = a.Email,
+            Telephone = a.Telephone,
+            Role = a.Role,
+            IsActive = a.IsActive,
+            Poste = a.Poste,
+            Departement = a.Departement,
+            Statut = a.IsActive ? "actif" : "inactif",
+            Type = a.AgentType,
+        };
     }
 }

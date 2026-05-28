@@ -24,6 +24,13 @@ namespace ModuleCRM.Models
 
         [Range(0, double.MaxValue, ErrorMessage = "La valeur estimée doit être positive.")]
         public decimal? ValeurEstimee { get; set; }
+
+        /// <summary>
+        /// Code ISO 4217 (TND, EUR, USD, GBP) — devise dans laquelle ValeurEstimee est exprimée.
+        /// </summary>
+        [StringLength(3)]
+        public string? Devise { get; set; }
+
         [Range(0, 100, ErrorMessage = "La probabilité doit être entre 0 et 100.")]
         public int Probabilite { get; set; } = 50;
 
@@ -40,6 +47,16 @@ namespace ModuleCRM.Models
         public int? AgentCdcId { get; set; }
         public DateTime? EcheanceCdc { get; set; }
         public string? CdcFilePath { get; set; }
+        public string? CdcFileName { get; set; }
+        public string? CdcContentType { get; set; }
+
+        // Pour les opportunités helpdesk : pas de CDC, mais une proposition de contrat
+        public string? PropositionContratFilePath { get; set; }
+        public string? PropositionContratFileName { get; set; }
+        public string? PropositionContratContentType { get; set; }
+
+        // Équipe assignée lors de la conversion en projet (FK soft vers Equipe côté RH)
+        public int? EquipeId { get; set; }
 
         public string? RaisonPerte { get; set; }
         public string? Notes { get; set; }
@@ -51,5 +68,6 @@ namespace ModuleCRM.Models
         // Timestamps
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsDeleted { get; set; } = false;
     }
 }

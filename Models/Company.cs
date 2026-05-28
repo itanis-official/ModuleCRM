@@ -54,9 +54,13 @@ namespace ModuleCRM.Models
         public string Statut { get; set; } = "prospect";
         public string? Notes { get; set; }
 
+        // SLA Helpdesk : nombre d'heures max pour traiter un ticket
+        public decimal? MaxHeuresTraitementTicket { get; set; }
+
         // Timestamps
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsDeleted { get; set; } = false;
 
         // Navigation
         [JsonIgnore]
