@@ -1,21 +1,26 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ModuleCRM.Data;
 using ModuleCRM.Models;
+using ModuleCRM.Services;
 
 namespace ModuleCRM.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ContractsController : ControllerBase
     {
         private readonly CrmDbContext _db;
         private readonly IWebHostEnvironment _env;
+        private readonly INotificationService _notifications;
 
-        public ContractsController(CrmDbContext db, IWebHostEnvironment env)
+        public ContractsController(CrmDbContext db, IWebHostEnvironment env, INotificationService notifications)
         {
             _db = db;
             _env = env;
+            _notifications = notifications;
         }
 
         [HttpGet]
@@ -87,6 +92,18 @@ namespace ModuleCRM.Controllers
 
             _db.Contracts.Add(contract);
             await _db.SaveChangesAsync();
+
+            var title = contract.Version > 1
+                ? $"Contrat V{contract.Version} téléversé"
+                : "Nouveau contrat téléversé";
+            var link = contract.ProjectId.HasValue
+                ? $"/crm/pipeline?opp={contract.ProjectId}"
+                : "/crm/contracts";
+            await _notifications.NotifyAllAsync(
+                "contract_uploaded",
+                title,
+                $"Référence {contract.Reference} — version V{contract.Version}.",
+                link);
 
             return CreatedAtAction(nameof(GetById), new { id = contract.Id }, contract);
         }

@@ -1,5 +1,8 @@
 .env
 
+# Runtime uploaded files (contracts PDFs, opportunity CdCs)
+Uploads/
+
 # Dependencies
 **/*.dll
 **/*.exe  
