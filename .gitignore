@@ -3,6 +3,9 @@
 # Runtime uploaded files (contracts PDFs, opportunity CdCs)
 Uploads/
 
+# Runtime test/debug logs
+*.log
+
 # Dependencies
 **/*.dll
 **/*.exe  
