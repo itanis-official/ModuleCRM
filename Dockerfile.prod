@@ -1,0 +1,37 @@
+# Étape 1 — Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+WORKDIR /src
+
+# Build args pour le feed NuGet GitHub
+# (NE persistent PAS dans l'image finale)
+ARG GITHUB_USERNAME
+ARG GITHUB_TOKEN
+
+# Copier nuget.config + csproj d'abord (cache Docker)
+COPY nuget.config .
+COPY ModuleCRM.csproj .
+
+# Restore avec les credentials GitHub
+ENV GITHUB_USERNAME=${GITHUB_USERNAME}
+ENV GITHUB_TOKEN=${GITHUB_TOKEN}
+RUN dotnet restore ModuleCRM.csproj
+
+# Copier le reste et publier
+COPY . .
+RUN dotnet publish ModuleCRM.csproj -c Release -o /app/publish \
+    --no-restore \
+    /p:UseAppHost=false
+
+# Étape 2 — Runtime (token absent = image propre)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+RUN chown -R app:app /app
+USER app
+
+ENV ASPNETCORE_URLS=http://+:80
+EXPOSE 80
+
+ENTRYPOINT ["dotnet", "ModuleCRM.dll"]
