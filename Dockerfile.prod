@@ -25,6 +25,10 @@ RUN dotnet publish ModuleCRM.csproj -c Release -o /app/publish \
 # Étape 2 — Runtime (token absent = image propre)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
 WORKDIR /app
+# Installer ICU pour support des cultures locales (en-us, fr-FR...)
+# Sans ça : "Only the invariant culture is supported" → app crashe au démarrage
+RUN apk add --no-cache icu-libs icu-data-full
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 COPY --from=build /app/publish .
 
