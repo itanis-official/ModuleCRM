@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using ModuleCRM.Data;
 using System.Security.Claims;
 
 namespace ModuleCRM.Services
@@ -50,6 +52,20 @@ namespace ModuleCRM.Services
             // 2) Fallback ancien systeme JWT local
             var legacy = user.FindFirstValue(ClaimTypes.Role) ?? user.FindFirstValue("role");
             return NormalizeLegacyRole(legacy);
+        }
+
+        // Authentik renvoie un sub UUID, pas un int. On mappe email -> AgentLocal.Id local.
+        public static async Task<int?> GetLocalAgentIdAsync(this ClaimsPrincipal user, CrmDbContext db, CancellationToken ct = default)
+        {
+            var email = user.FindFirstValue(ClaimTypes.Email)
+                ?? user.FindFirstValue("email")
+                ?? user.FindFirstValue("preferred_username");
+            if (string.IsNullOrWhiteSpace(email)) return null;
+
+            return await db.AgentsLocal.AsNoTracking()
+                .Where(a => a.Email == email)
+                .Select(a => (int?)a.Id)
+                .FirstOrDefaultAsync(ct);
         }
 
         private static string NormalizeLegacyRole(string? rawRole)

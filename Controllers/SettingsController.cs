@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ModuleCRM.Data;
 using ModuleCRM.Models;
-using System.Security.Claims;
+using ModuleCRM.Services;
 
 namespace ModuleCRM.Controllers
 {
@@ -32,16 +32,10 @@ namespace ModuleCRM.Controllers
             public bool WeeklyReport { get; set; } = true;
         }
 
-        private int? GetCurrentUserId()
-        {
-            var sub = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(sub, out var id) ? id : null;
-        }
-
         [HttpGet("me")]
         public async Task<ActionResult<UserSettingDto>> GetMine()
         {
-            var userId = GetCurrentUserId();
+            var userId = await User.GetLocalAgentIdAsync(_db);
             if (userId == null) return Unauthorized();
 
             var s = await _db.UserSettings.AsNoTracking()
@@ -67,7 +61,7 @@ namespace ModuleCRM.Controllers
         [HttpPut("me")]
         public async Task<ActionResult<UserSettingDto>> UpdateMine([FromBody] UserSettingDto dto)
         {
-            var userId = GetCurrentUserId();
+            var userId = await User.GetLocalAgentIdAsync(_db);
             if (userId == null) return Unauthorized();
 
             var s = await _db.UserSettings.FirstOrDefaultAsync(x => x.UserId == userId);

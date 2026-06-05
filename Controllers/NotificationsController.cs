@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ModuleCRM.Data;
-using System.Security.Claims;
+using ModuleCRM.Services;
 
 namespace ModuleCRM.Controllers
 {
@@ -18,16 +18,10 @@ namespace ModuleCRM.Controllers
             _db = db;
         }
 
-        private int? GetCurrentUserId()
-        {
-            var sub = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(sub, out var id) ? id : null;
-        }
-
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int take = 30)
         {
-            var userId = GetCurrentUserId();
+            var userId = await User.GetLocalAgentIdAsync(_db);
             take = Math.Clamp(take, 1, 100);
 
             var items = await _db.Notifications
@@ -54,7 +48,7 @@ namespace ModuleCRM.Controllers
         [HttpGet("unread-count")]
         public async Task<IActionResult> GetUnreadCount()
         {
-            var userId = GetCurrentUserId();
+            var userId = await User.GetLocalAgentIdAsync(_db);
             var count = await _db.Notifications
                 .Where(n => (n.UserId == userId || n.UserId == null) && !n.IsRead)
                 .CountAsync();
@@ -64,7 +58,7 @@ namespace ModuleCRM.Controllers
         [HttpPost("{id}/read")]
         public async Task<IActionResult> MarkRead(int id)
         {
-            var userId = GetCurrentUserId();
+            var userId = await User.GetLocalAgentIdAsync(_db);
             var n = await _db.Notifications.FirstOrDefaultAsync(x =>
                 x.Id == id && (x.UserId == userId || x.UserId == null));
             if (n == null) return NotFound();
@@ -80,7 +74,7 @@ namespace ModuleCRM.Controllers
         [HttpPost("read-all")]
         public async Task<IActionResult> MarkAllRead()
         {
-            var userId = GetCurrentUserId();
+            var userId = await User.GetLocalAgentIdAsync(_db);
             var now = DateTime.UtcNow;
             var items = await _db.Notifications
                 .Where(n => (n.UserId == userId || n.UserId == null) && !n.IsRead)
