@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MassTransit;
@@ -63,6 +64,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromMinutes(1),
+        };
+
+        // Authentik ne met que les groupes dans le token : on en derive le role ITANIS
+        // et on l'ajoute comme claim de role standard (pour [Authorize(Roles = ...)]).
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = ctx =>
+            {
+                if (ctx.Principal?.Identity is ClaimsIdentity identity)
+                {
+                    var role = ctx.Principal.GetItanisRole();
+                    if (!string.IsNullOrEmpty(role) && !identity.HasClaim(ClaimTypes.Role, role))
+                        identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 builder.Services.AddAuthorization();

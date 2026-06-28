@@ -22,7 +22,7 @@ namespace ModuleCRM.Controllers
         [HttpGet("dashboard")]
         public async Task<ActionResult<ClientPortalDashboardDto>> GetDashboard()
         {
-            var contactId = GetContactId();
+            var contactId = await GetContactIdAsync();
             if (contactId == null)
                 return Unauthorized(new { message = "Contact introuvable dans le token." });
 
@@ -160,15 +160,25 @@ namespace ModuleCRM.Controllers
             });
         }
 
-        private int? GetContactId()
+        private async Task<int?> GetContactIdAsync(CancellationToken ct = default)
         {
+            // Ancien JWT local : le sub etait directement l'Id entier du contact.
             var raw = User.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? User.FindFirstValue("sub");
+            if (int.TryParse(raw, out var legacyId))
+                return legacyId;
 
-            if (int.TryParse(raw, out var contactId))
-                return contactId;
+            // Authentik : le sub est un UUID -> on resout le contact par son email.
+            var email = User.FindFirstValue(ClaimTypes.Email)
+                ?? User.FindFirstValue("email")
+                ?? User.FindFirstValue("preferred_username");
+            if (string.IsNullOrWhiteSpace(email))
+                return null;
 
-            return null;
+            return await _db.Contacts.AsNoTracking()
+                .Where(c => c.Email == email && c.IsActive)
+                .Select(c => (int?)c.Id)
+                .FirstOrDefaultAsync(ct);
         }
 
         private static bool IsDone(string? status)
