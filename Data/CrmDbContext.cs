@@ -12,6 +12,7 @@ namespace ModuleCRM.Data
         }
 
         public DbSet<Company> Companies => Set<Company>();
+        public DbSet<DocumentCrm> DocumentsCrm => Set<DocumentCrm>();
         public DbSet<Contact> Contacts => Set<Contact>();
         public DbSet<Opportunity> Opportunities => Set<Opportunity>();
         public DbSet<Contract> Contracts => Set<Contract>();
@@ -25,6 +26,7 @@ namespace ModuleCRM.Data
         public DbSet<TypeProjet> TypesProjet => Set<TypeProjet>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<UserSetting> UserSettings => Set<UserSetting>();
+        public DbSet<AppSetting> AppSettings => Set<AppSetting>();
         public DbSet<AgentLocal> AgentsLocal => Set<AgentLocal>();
         public DbSet<EquipeLocal> EquipesLocal => Set<EquipeLocal>();
         public DbSet<EquipeMembreLocal> EquipesMembresLocal => Set<EquipeMembreLocal>();

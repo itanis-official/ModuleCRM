@@ -91,5 +91,36 @@ namespace ModuleCRM.Controllers
             await _db.SaveChangesAsync();
             return Ok(dto);
         }
+
+        // ===== Reglages GLOBAUX (clef -> valeur JSON), partages par tous les utilisateurs =====
+        // Ex: 'select-options-config' = configuration des listes de parametres CRM.
+        // N'exige que l'authentification (pas l'id agent local) : lisible par tout employe,
+        // car les formulaires consomment ces listes.
+        public class AppSettingValueDto
+        {
+            public string? Value { get; set; }
+        }
+
+        [HttpGet("app/{key}")]
+        public async Task<ActionResult<AppSettingValueDto>> GetApp(string key)
+        {
+            var s = await _db.AppSettings.AsNoTracking().FirstOrDefaultAsync(x => x.Key == key);
+            return Ok(new AppSettingValueDto { Value = s?.Value });
+        }
+
+        [HttpPut("app/{key}")]
+        public async Task<ActionResult<AppSettingValueDto>> PutApp(string key, [FromBody] AppSettingValueDto dto)
+        {
+            var s = await _db.AppSettings.FirstOrDefaultAsync(x => x.Key == key);
+            if (s == null)
+            {
+                s = new AppSetting { Key = key };
+                _db.AppSettings.Add(s);
+            }
+            s.Value = dto.Value ?? string.Empty;
+            s.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            return Ok(new AppSettingValueDto { Value = s.Value });
+        }
     }
 }
