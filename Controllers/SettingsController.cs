@@ -1,9 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ModuleCRM.Data;
 using ModuleCRM.Models;
-using System.Security.Claims;
 
 namespace ModuleCRM.Controllers
 {
@@ -32,23 +32,26 @@ namespace ModuleCRM.Controllers
             public bool WeeklyReport { get; set; } = true;
         }
 
-        private int? GetCurrentUserId()
-        {
-            var sub = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(sub, out var id) ? id : null;
-        }
+        // Cle stable de l'utilisateur depuis le token Authentik : email en priorite, sinon le sub.
+        // Important : le sub Authentik est un UUID (pas un int) -> on le garde en string.
+        // Independant de la replique AgentsLocal : marche pour tout utilisateur authentifie.
+        private string? GetUserKey()
+            => User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue("email")
+            ?? User.FindFirstValue("preferred_username")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
 
         [HttpGet("me")]
         public async Task<ActionResult<UserSettingDto>> GetMine()
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-
-            var s = await _db.UserSettings.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == userId);
+            var key = GetUserKey();
+            var s = string.IsNullOrWhiteSpace(key)
+                ? null
+                : await _db.UserSettings.AsNoTracking().FirstOrDefaultAsync(x => x.UserKey == key);
 
             if (s == null)
-                return Ok(new UserSettingDto());
+                return Ok(new UserSettingDto()); // pas de reglages encore : valeurs par defaut (jamais 401)
 
             return Ok(new UserSettingDto
             {
@@ -67,13 +70,14 @@ namespace ModuleCRM.Controllers
         [HttpPut("me")]
         public async Task<ActionResult<UserSettingDto>> UpdateMine([FromBody] UserSettingDto dto)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var key = GetUserKey();
+            if (string.IsNullOrWhiteSpace(key))
+                return Ok(dto); // token sans identite exploitable : rien a persister, mais pas d'erreur
 
-            var s = await _db.UserSettings.FirstOrDefaultAsync(x => x.UserId == userId);
+            var s = await _db.UserSettings.FirstOrDefaultAsync(x => x.UserKey == key);
             if (s == null)
             {
-                s = new UserSetting { UserId = userId.Value };
+                s = new UserSetting { UserKey = key };
                 _db.UserSettings.Add(s);
             }
 

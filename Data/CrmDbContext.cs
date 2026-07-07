@@ -173,9 +173,13 @@ namespace ModuleCRM.Data
                 .HasIndex(n => n.CreatedAt);
 
             // --- UserSettings ---
+            // Cle effective = UserKey (identite token). UserId garde un index simple (compat/migration).
             modelBuilder.Entity<UserSetting>()
-                .HasIndex(s => s.UserId)
-                .IsUnique();
+                .HasIndex(s => s.UserId);
+            modelBuilder.Entity<UserSetting>()
+                .HasIndex(s => s.UserKey)
+                .IsUnique()
+                .HasFilter("[UserKey] IS NOT NULL");
 
             // --- AgentLocal (read-replica RH via RabbitMQ) ---
             // Clé composite Id + AgentType car les ids interne/externe peuvent collisionner.

@@ -6,8 +6,13 @@ namespace ModuleCRM.Models
     {
         public int Id { get; set; }
 
-        [Required]
+        // Ancienne clé (id agent local db_crm). Conservée pour compat, plus utilisée comme clé.
         public int UserId { get; set; }
+
+        // Clé stable issue du token Authentik (email, sinon sub). Independante de la
+        // replique AgentsLocal : tout utilisateur authentifie peut persister ses reglages.
+        [MaxLength(256)]
+        public string? UserKey { get; set; }
 
         [Required]
         [StringLength(8)]
