@@ -76,18 +76,7 @@ namespace ModuleCRM.Controllers
                 if (dto.File.Length > 20 * 1024 * 1024)
                     return BadRequest(new { message = "Le fichier dépasse la taille maximale de 20 Mo." });
 
-                var uploadsDir = Path.Combine(_env.ContentRootPath, "Uploads", "Contracts");
-                Directory.CreateDirectory(uploadsDir);
-
-                var fileName = $"{contract.Reference}-V{contract.Version}_{DateTime.UtcNow:yyyyMMddHHmmss}{Path.GetExtension(dto.File.FileName)}";
-                var filePath = Path.Combine(uploadsDir, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await dto.File.CopyToAsync(stream);
-                }
-
-                contract.FilePath = $"/uploads/contracts/{fileName}";
+                contract.FilePath = await DocumentStorage.SaveAsync(_db, dto.File);
             }
 
             _db.Contracts.Add(contract);
@@ -182,14 +171,14 @@ namespace ModuleCRM.Controllers
             if (contract == null || string.IsNullOrEmpty(contract.FilePath))
                 return NotFound();
 
-            var fullPath = Path.Combine(_env.ContentRootPath, "Uploads", "Contracts",
-                Path.GetFileName(contract.FilePath));
+            // FilePath = "/documents/{docId}" -> fichier stocke en base.
+            var doc = int.TryParse(Path.GetFileName(contract.FilePath), out var docId) && docId > 0
+                ? await _db.DocumentsCrm.FindAsync(docId)
+                : null;
+            if (doc == null) return NotFound("Fichier introuvable");
 
-            if (!System.IO.File.Exists(fullPath))
-                return NotFound("Fichier introuvable");
-
-            var bytes = await System.IO.File.ReadAllBytesAsync(fullPath);
-            return File(bytes, "application/pdf", Path.GetFileName(contract.FilePath));
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{doc.NomFichier}\"";
+            return File(doc.Donnees, doc.TypeContenu);
         }
     }
 

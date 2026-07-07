@@ -5,6 +5,7 @@ using ModuleCRM.Data;
 using ModuleCRM.DTOs;
 using ModuleCRM.Models;
 using ModuleCRM.Services;
+using ModuleCRM.Services;
 using MassTransit;
 using ITANIS.SharedEvents;
 using Microsoft.Extensions.Logging;
@@ -50,22 +51,12 @@ namespace ModuleCRM.Controllers
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "Aucun fichier fourni." });
 
-            var ext = Path.GetExtension(file.FileName);
-            var storedName = $"{Guid.NewGuid():N}{ext}";
-            var dir = Path.Combine(_env.ContentRootPath, "Uploads", "Cdc");
-            Directory.CreateDirectory(dir);
-            var fullPath = Path.Combine(dir, storedName);
-
-            await using (var stream = System.IO.File.Create(fullPath))
-            {
-                await file.CopyToAsync(stream);
-            }
-
+            var filePath = await DocumentStorage.SaveAsync(_db, file);
             return Ok(new
             {
                 fileName = file.FileName,
                 contentType = file.ContentType,
-                filePath = $"/uploads/cdc/{storedName}",
+                filePath,
             });
         }
 
@@ -287,27 +278,7 @@ namespace ModuleCRM.Controllers
             if (dto.File.Length > 20 * 1024 * 1024)
                 return BadRequest(new { message = "Le fichier dépasse la taille maximale de 20 Mo." });
 
-            var uploadsDir = Path.Combine(_env.ContentRootPath,
-                "Uploads",
-                "Opportunities",
-                "Cdc",
-                id.ToString());
-            Directory.CreateDirectory(uploadsDir);
-
-            var safeName = Path.GetFileNameWithoutExtension(dto.File.FileName)
-                .Replace(" ", "-")
-                .Replace("_", "-")
-                .ToLowerInvariant();
-
-            var fileName = $"{safeName}-{DateTime.UtcNow:yyyyMMddHHmmssfff}{extension}";
-            var fullPath = Path.Combine(uploadsDir, fileName);
-
-            await using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await dto.File.CopyToAsync(stream);
-            }
-
-            opportunity.CdcFilePath = $"/uploads/opportunities/cdc/{id}/{fileName}";
+            opportunity.CdcFilePath = await DocumentStorage.SaveAsync(_db, dto.File);
             opportunity.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
@@ -356,22 +327,20 @@ namespace ModuleCRM.Controllers
             string? cdcContentType = opportunity.CdcContentType;
             byte[]? cdcFileContent = null;
 
-            if (!string.IsNullOrWhiteSpace(opportunity.CdcFilePath))
+            if (!string.IsNullOrWhiteSpace(opportunity.CdcFilePath)
+                && int.TryParse(Path.GetFileName(opportunity.CdcFilePath), out var cdcDocId) && cdcDocId > 0)
             {
-                var relative = opportunity.CdcFilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-                var cdcPhysicalPath = Path.Combine(_env.ContentRootPath, relative);
-
-                if (System.IO.File.Exists(cdcPhysicalPath))
+                // CdcFilePath = "/documents/{docId}" -> contenu stocke en base.
+                var cdcDoc = await _db.DocumentsCrm.FindAsync(cdcDocId);
+                if (cdcDoc != null)
                 {
-                    cdcFileContent = await System.IO.File.ReadAllBytesAsync(cdcPhysicalPath);
-                    if (string.IsNullOrWhiteSpace(cdcFileName))
-                        cdcFileName = Path.GetFileName(cdcPhysicalPath);
-                    if (string.IsNullOrWhiteSpace(cdcContentType))
-                        cdcContentType = GetContentType(cdcFileName);
+                    cdcFileContent = cdcDoc.Donnees;
+                    if (string.IsNullOrWhiteSpace(cdcFileName)) cdcFileName = cdcDoc.NomFichier;
+                    if (string.IsNullOrWhiteSpace(cdcContentType)) cdcContentType = cdcDoc.TypeContenu;
                 }
                 else
                 {
-                    _logger.LogWarning("CDC introuvable sur disque pour l'opportunité {OpportunityId}: {Path}", opportunity.Id, cdcPhysicalPath);
+                    _logger.LogWarning("CDC introuvable en base pour l'opportunité {OpportunityId} (doc {DocId})", opportunity.Id, cdcDocId);
                 }
             }
 
@@ -483,27 +452,7 @@ namespace ModuleCRM.Controllers
             if (dto.File.Length > 20 * 1024 * 1024)
                 return BadRequest(new { message = "Le fichier dépasse la taille maximale de 20 Mo." });
 
-            var uploadsDir = Path.Combine(_env.ContentRootPath,
-                "Uploads",
-                "Opportunities",
-                "PropositionContrat",
-                id.ToString());
-            Directory.CreateDirectory(uploadsDir);
-
-            var safeName = Path.GetFileNameWithoutExtension(dto.File.FileName)
-                .Replace(" ", "-")
-                .Replace("_", "-")
-                .ToLowerInvariant();
-
-            var fileName = $"{safeName}-{DateTime.UtcNow:yyyyMMddHHmmssfff}{extension}";
-            var fullPath = Path.Combine(uploadsDir, fileName);
-
-            await using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await dto.File.CopyToAsync(stream);
-            }
-
-            opportunity.PropositionContratFilePath = $"/uploads/opportunities/propositioncontrat/{id}/{fileName}";
+            opportunity.PropositionContratFilePath = await DocumentStorage.SaveAsync(_db, dto.File);
             opportunity.PropositionContratFileName = dto.File.FileName;
             opportunity.PropositionContratContentType = dto.File.ContentType;
             opportunity.UpdatedAt = DateTime.UtcNow;

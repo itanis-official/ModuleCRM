@@ -324,20 +324,7 @@ namespace ModuleCRM.Controllers
             if (dto.File.Length > 20 * 1024 * 1024)
                 return BadRequest(new { message = "Fichier trop volumineux (max 20 Mo)." });
 
-            var subDir = phase.Type == "proposition" ? "PropositionContrat" : "PhaseDocs";
-            var uploadsDir = Path.Combine(_env.ContentRootPath,
-                "Uploads", "Opportunities", subDir, phase.OpportunityId.ToString());
-            Directory.CreateDirectory(uploadsDir);
-
-            var safeName = Path.GetFileNameWithoutExtension(dto.File.FileName)
-                .Replace(" ", "-").Replace("_", "-").ToLowerInvariant();
-            var fileName = $"{safeName}-{DateTime.UtcNow:yyyyMMddHHmmssfff}{extension}";
-            var fullPath = Path.Combine(uploadsDir, fileName);
-
-            await using (var stream = new FileStream(fullPath, FileMode.Create))
-                await dto.File.CopyToAsync(stream);
-
-            phase.DocumentPath = $"/uploads/opportunities/{subDir.ToLowerInvariant()}/{phase.OpportunityId}/{fileName}";
+            phase.DocumentPath = await DocumentStorage.SaveAsync(_db, dto.File);
             phase.DocumentName = dto.File.FileName;
             phase.DocumentContentType = dto.File.ContentType;
             phase.UpdatedAt = DateTime.UtcNow;
