@@ -229,6 +229,14 @@ namespace ModuleCRM.Controllers
 
             await _db.SaveChangesAsync();
 
+            // Opportunite gagnee -> le(s) contrat(s) passe(nt) "signed" (deal conclu).
+            if (targetStage == "gagnee")
+            {
+                await _db.Contracts
+                    .Where(c => c.ProjectId == existing.Id)
+                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.Status, "signed"));
+            }
+
             var stageLabel = targetStage switch
             {
                 "qualification" => "Qualification",

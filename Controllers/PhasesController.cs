@@ -194,6 +194,15 @@ namespace ModuleCRM.Controllers
 
             await _db.SaveChangesAsync();
 
+            // Quand la phase Contrat passe "signed", les contrats de l'opportunite suivent
+            // (statut "signed") -> l'affichage dans la section Contrats reste coherent.
+            if (existing.Type == "contract" && status == "signed")
+            {
+                await _db.Contracts
+                    .Where(c => c.ProjectId == existing.OpportunityId)
+                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.Status, "signed"));
+            }
+
             // Retourne la phase + une éventuelle suggestion de pipelineStage
             var opp = await _db.Opportunities.AsNoTracking().FirstOrDefaultAsync(o => o.Id == existing.OpportunityId);
             var suggestion = SuggestPipelineStage(existing, opp);

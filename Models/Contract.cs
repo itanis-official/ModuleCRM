@@ -27,7 +27,7 @@ namespace ModuleCRM.Models
         [Range(0, double.MaxValue, ErrorMessage = "Le montant doit être positif.")]
         public decimal Amount { get; set; } = 0;
 
-        public string Status { get; set; } = "draft"; // draft, active, replaced, expired
+        public string Status { get; set; } = "pending"; // pending, signed
 
         // Agent vient de ModuleRH via API
         public int? UploadedById { get; set; }

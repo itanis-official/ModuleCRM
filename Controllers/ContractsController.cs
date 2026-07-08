@@ -58,7 +58,7 @@ namespace ModuleCRM.Controllers
                 DateStart = dto.DateStart,
                 DateEnd = dto.DateEnd,
                 Amount = dto.Amount,
-                Status = dto.Status ?? "draft",
+                Status = dto.Status ?? "pending",
                 Notes = dto.Notes,
                 UploadDate = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow,
